@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import User from './db/User';
+// import User from './db/User';
+import User from './models/user.model';
 import connectDB from './db/db';
 import { LIMIT } from './constants';
 

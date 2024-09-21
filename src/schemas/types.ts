@@ -5,6 +5,7 @@ export interface IUser extends Document {
     email: string;
     password: string;
     salt: string;
+    refreshToken: string;
     name: string;
     createdAt: Date;
     updatedAt: Date;
@@ -20,10 +21,3 @@ export interface ITask extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
-
-// export interface IApiResponse {
-//     statusCode: number;
-//     data: any,
-//     message: string;
-//     success: boolean;
-// }
