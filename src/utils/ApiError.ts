@@ -7,7 +7,7 @@ interface IApiError extends Error {
     stack?: string; // Optional because the stack may or may not be provided
 }
 
-class ApiError extends Error implements IApiError {
+export default class ApiError extends Error implements IApiError {
     statusCode: number;
     data: any;
     success: boolean;

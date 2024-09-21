@@ -18,3 +18,5 @@ class ApiResponse implements IApiResponse {
         this.success = statusCode < 400;
     }
 }
+
+export default ApiResponse;

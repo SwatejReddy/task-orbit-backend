@@ -9,6 +9,11 @@ export interface IUser extends Document {
     name: string;
     createdAt: Date;
     updatedAt: Date;
+
+    // Instance methods
+    isPasswordCorrect(password: string): Promise<boolean>;
+    generateRefreshToken(): string;
+    generateAccessToken(): string;
 }
 
 export interface ITask extends Document {
@@ -20,4 +25,16 @@ export interface ITask extends Document {
     user: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
+}
+
+// types/express.d.ts
+// import { UserDocument } from "../models/user.model"; // Adjust path according to your setup
+
+
+declare global {
+    namespace Express {
+        interface Request {
+            user?: IUser; // Use your User type here
+        }
+    }
 }

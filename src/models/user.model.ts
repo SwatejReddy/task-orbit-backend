@@ -1,9 +1,19 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 import { IUser } from "../schemas/types";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
-const userSchema: Schema<IUser> = new Schema({
+interface IUserMethods {
+    isPasswordCorrect(password: string): Promise<boolean>;
+    generateAccessToken(): string;
+    generateRefreshToken(): string;
+}
+
+interface UserModel extends Model<IUser, {}, IUserMethods> {
+    userAlreadyExists(email: string, username: string): Promise<boolean>;
+}
+
+const userSchema: Schema<IUser, {}, IUserMethods> = new Schema({
     username: {
         type: String,
         required: true,
@@ -27,13 +37,13 @@ const userSchema: Schema<IUser> = new Schema({
     },
     salt: {
         type: String,
-        required: true
     },
     refreshToken: {
         type: String
     },
     name: {
         type: String,
+        required: true,
         trim: true,
         maxlength: 50
     }
@@ -64,7 +74,8 @@ userSchema.methods.isPasswordCorrect = async function (password: string): Promis
     // takes salt from db and hashes the password
     const hashedPassword = await bcrypt.hash(password, this.salt);
     // takes the hashed password and compares it with the already salted & hashed password in the db
-    return await bcrypt.compare(hashedPassword, this.password);
+    // return await bcrypt.compare(hashedPassword, this.password);
+    return hashedPassword === this.password;
 }
 
 userSchema.methods.generateAccessToken = function (): string {
@@ -82,6 +93,7 @@ userSchema.methods.generateAccessToken = function (): string {
     )
 }
 
+
 userSchema.methods.generateRefreshToken = function (): string {
     return jwt.sign(
         {
@@ -94,6 +106,11 @@ userSchema.methods.generateRefreshToken = function (): string {
     )
 }
 
-export const User = (mongoose.models.User as mongoose.Model<IUser>) || mongoose.model<IUser>('User', userSchema);
+userSchema.static('userAlreadyExists', async function (email: string, username: string): Promise<boolean> {
+    const userExists = await (this as mongoose.Model<IUser>).exists({ $or: [{ email }, { username }] });
+    return userExists !== null;
+});
+
+export const User = mongoose.model<IUser, UserModel>('User', userSchema);
 
 export default User;
