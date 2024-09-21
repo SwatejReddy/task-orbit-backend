@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from "../models/user.model";
 
+// takes access token from the request and verifies it and adds the user details to the request object
 export const verifyJWT = asyncHandler(async (req: Request, _, next: NextFunction) => {
     try {
         // extract the access token from cookie or the header

@@ -4,7 +4,9 @@ import { Request, Response } from "express";
 import ApiError from "../utils/ApiError";
 import { loginSchema, signUpSchema } from "../schemas/zodSchemas";
 import User from "../models/user.model";
+import jwt from "jsonwebtoken";
 
+// generates access token and refresh token and stores it in db
 const generateAccessAndRefreshToken = async (userId: string) => {
     try {
         // find the user by user _id
@@ -147,4 +149,52 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
 })
 
-export { registerUser, loginUser, logoutUser }
+const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
+    const incomingRefreshToken = req.cookies.refreshToken
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "No Refresh Token found!");
+    }
+
+    if (!process.env.REFRESH_TOKEN_SECRET) {
+        throw new ApiError(500, "Refresh Token Secret not found!");
+    }
+
+    const decodedRefreshToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+    if (decodedRefreshToken === null || typeof decodedRefreshToken === 'string') {
+        throw new ApiError(401, "Invalid Access Token!");
+    }
+
+    const userId = decodedRefreshToken?._id;
+    // const userId = req.user?._id;
+
+    if (!userId) {
+        throw new ApiError(401, "User not found!");
+    }
+
+    const storedRefreshToken = await User.findById(userId).select("refreshToken");
+
+    if (!storedRefreshToken) {
+        throw new ApiError(401, "User not found!");
+    }
+
+    if (incomingRefreshToken !== storedRefreshToken.refreshToken) {
+        throw new ApiError(401, "Invalid Refresh Token! Login again!");
+    }
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(userId);
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new ApiResponse(200, { accessToken, refreshToken }, "Access and refresh tokens refreshed!"));
+})
+
+export { registerUser, loginUser, logoutUser, refreshTokens };
