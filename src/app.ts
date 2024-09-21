@@ -3,14 +3,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import User from './db/User';
+import connectDB from './db/db';
+import { LIMIT } from './constants';
 
 // Load environment variables
+const port = process.env.PORT || 3000;
 
 const app: Application = express();
 
-const port = process.env.PORT || 3000;
 
-const limit = '16kb';
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN,
@@ -18,12 +20,12 @@ var corsOptions = {
 }
 
 var jsonOptions = {
-    limit: limit // to prevent large payloads
+    limit: LIMIT // to prevent large payloads
 }
 
 var urlencodedOptions = {
     extended: true, // to allow nested objects in query strings
-    limit: limit
+    limit: LIMIT
 }
 
 app.use(cors(corsOptions));
@@ -33,13 +35,38 @@ app.use(express.static('public'));
 app.use(cookieParser());
 
 // Basic route
-app.get('/', (req: Request, res: Response) => {
-    res.json({ message: 'Server is running successfully!' });
+app.get('/', async (req: Request, res: Response) => {
+    const exists = await User.findOne({ username: 'test' }) || false;
+    if (exists) {
+        console.log('User exists');
+        return res.json(exists);
+    }
+    // create a new user
+    else {
+        const user = await new User(
+            {
+                username: 'test',
+                email: 'test@gmail.com',
+                password: 'password',
+                salt: 'salt',
+                name: 'Test User',
+            }
+        )
+        user.save().then(() => {
+            console.log('User created');
+        }).catch((error) => {
+            console.log(error);
+        });
+        return res.json(user);
+    }
+    // res.json({ message: 'Server is running successfully!' });
 });
 
 // Start the server
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    connectDB().then(() => {
+        console.log(`Server is running on port ${port}`);
+    })
 });
 
 export default app;
