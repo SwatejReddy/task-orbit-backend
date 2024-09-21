@@ -35,6 +35,16 @@ app.use(express.urlencoded(urlencodedOptions));
 app.use(express.static('public'));
 app.use(cookieParser());
 
+//routes import
+
+import userRouter from './routes/user.routes'
+import { API } from './constants';
+
+// const API = '/api/v1';
+
+//routes delcaration
+app.use(`${API}/user`, userRouter);
+
 // Basic route
 app.get('/', async (req: Request, res: Response) => {
     const exists = await User.findOne({ username: 'test' }) || false;

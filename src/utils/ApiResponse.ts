@@ -1,4 +1,4 @@
-interface IApiResponse {
+export interface IApiResponse {
     statusCode: number;
     data: any,
     message: string;
