@@ -39,38 +39,17 @@ app.use(cookieParser());
 
 import userRouter from './routes/user.routes'
 import { API } from './constants';
+import taskRouter from './routes/task.routes';
 
 // const API = '/api/v1';
 
 //routes delcaration
 app.use(`${API}/user`, userRouter);
+app.use(`${API}/task`, taskRouter);
 
 // Basic route
 app.get('/', async (req: Request, res: Response) => {
-    const exists = await User.findOne({ username: 'test' }) || false;
-    if (exists) {
-        console.log('User exists');
-        return res.json(exists);
-    }
-    // create a new user
-    else {
-        const user = await new User(
-            {
-                username: 'test',
-                email: 'test@gmail.com',
-                password: 'password',
-                salt: 'salt',
-                name: 'Test User',
-            }
-        )
-        user.save().then(() => {
-            console.log('User created');
-        }).catch((error) => {
-            console.log(error);
-        });
-        return res.json(user);
-    }
-    // res.json({ message: 'Server is running successfully!' });
+    res.json({ message: 'Server is running successfully!' });
 });
 
 // Start the server

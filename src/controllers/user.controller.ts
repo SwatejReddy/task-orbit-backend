@@ -1,4 +1,4 @@
-import ApiResponse, { IApiResponse } from "../utils/ApiResponse";
+import ApiResponse from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/asyncHandler";
 import { Request, Response } from "express";
 import ApiError from "../utils/ApiError";
@@ -34,7 +34,7 @@ const generateAccessAndRefreshToken = async (userId: string) => {
     }
 }
 
-// this is a function to create a user that will be passed to a higher order function (asyncHandler) to handle any errors that may occur.
+// this is a function to create a user
 const registerUser = asyncHandler(async (req: Request, res: Response) => {
     // validate the request body
     const validated = signUpSchema.safeParse(req.body);
@@ -71,6 +71,7 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
 
 })
 
+// this is a function to login a user
 const loginUser = asyncHandler(async (req: Request, res: Response) => {
     // parse request body with zod schema
     // find the user
@@ -125,6 +126,7 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
         );
 })
 
+// this is a function to logout a user
 const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
     await User.findByIdAndUpdate(
@@ -149,6 +151,7 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
 })
 
+// this is a function to refresh the access token and refresh token
 const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
     const incomingRefreshToken = req.cookies.refreshToken
 
@@ -160,6 +163,7 @@ const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
         throw new ApiError(500, "Refresh Token Secret not found!");
     }
 
+    // get the user id from the refresh token as access token middleware can't be used here
     const decodedRefreshToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     if (decodedRefreshToken === null || typeof decodedRefreshToken === 'string') {
@@ -173,12 +177,14 @@ const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
         throw new ApiError(401, "User not found!");
     }
 
+    // fetch the stored refresh token from the database
     const storedRefreshToken = await User.findById(userId).select("refreshToken");
 
     if (!storedRefreshToken) {
         throw new ApiError(401, "User not found!");
     }
 
+    // check if the incoming refresh token is the same as the stored refresh token
     if (incomingRefreshToken !== storedRefreshToken.refreshToken) {
         throw new ApiError(401, "Invalid Refresh Token! Login again!");
     }
@@ -188,6 +194,7 @@ const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
         secure: true
     }
 
+    // generate new access token and refresh token
     const { refreshToken, accessToken } = await generateAccessAndRefreshToken(userId);
 
     return res
