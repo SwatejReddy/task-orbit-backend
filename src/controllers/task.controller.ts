@@ -3,23 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { Request, Response } from "express";
 import ApiError from "../utils/ApiError";
 import { taskSchema } from "../schemas/zodSchemas";
-import User from "../models/user.model";
-import jwt from "jsonwebtoken";
 import Task from "../models/task.model";
 
-// # Routes:
-
-// ## Task Routes:
-
-// - /task
-
-// - [ ]  Create a task : /new
-
-// - [ ]  Edit a task : /edit/:id
-
-// - [ ]  Delete a task : /delete/:id
-
-// - [ ]  View all tasks : /view/all 
 
 const createTask = asyncHandler(async (req: Request, res: Response) => {
 
@@ -49,4 +34,70 @@ const createTask = asyncHandler(async (req: Request, res: Response) => {
 
 })
 
-export { createTask }
+const editTask = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { title, description, status, priority, dueDate } = req.body;
+
+    if (!req.user?._id) {
+        throw new ApiError(401, "Unauthorized Access");
+    }
+
+    const task = await Task.findOneAndUpdate({
+        _id: id,
+        user: req.user._id
+    }, {
+        title,
+        description,
+        status,
+        priority,
+        dueDate
+    }, { new: true }) // to return the updated document
+
+    if (!task) {
+        throw new ApiError(404, "Task Not Found");
+    }
+
+    res
+        .status(200)
+        .json(new ApiResponse(200, task, "Task Updated"));
+})
+
+const deleteTask = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (!req.user?._id) {
+        throw new ApiError(401, "Unauthorized Access");
+    }
+
+    const task = await Task.findOneAndDelete({
+        _id: id,
+        user: req.user._id
+    })
+
+    if (!task) {
+        throw new ApiError(404, "Task Not Found");
+    }
+
+    res
+        .status(200)
+        .json(new ApiResponse(200, task, "Task Deleted"));
+})
+
+const viewAllTasks = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?._id) {
+        throw new ApiError(401, "Unauthorized Access");
+    }
+    console.log("userId: ", req.user._id);
+
+    const tasks = await Task.find({ user: req.user._id });
+
+    if (!tasks) {
+        throw new ApiError(404, "No Tasks Found");
+    }
+
+    res
+        .status(200)
+        .json(new ApiResponse(200, tasks, "Tasks Found"));
+})
+
+export { createTask, editTask, deleteTask, viewAllTasks }
